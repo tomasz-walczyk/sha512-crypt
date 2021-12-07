@@ -1,0 +1,147 @@
+#
+# Copyright (C) 2022 Tomasz Walczyk
+#
+# This software may be modified and distributed under the terms
+# of the GNU LESSER GENERAL PUBLIC LICENSE VERSION 3.0.
+# See the LICENSE file for details.
+#
+############################################################
+
+name: Release
+on:
+  push:
+    tags:
+      - 'v*'
+jobs:
+  prepare:
+    name: Prepare
+    runs-on: ubuntu-latest
+    outputs:
+      release_name: ${{ steps.check_version.outputs.release_name }}
+      release_version: ${{ steps.check_version.outputs.release_version }}
+      release_notes_file_name: ${{ steps.check_version.outputs.release_notes_file_name }}
+      release_notes_file_path: ${{ steps.check_version.outputs.release_notes_file_path }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Check Version
+        id: check_version
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: bash .github/workflows/scripts/check-release-version.bash
+      - name: Upload Release Notes
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.check_version.outputs.release_notes_file_name }}
+          path: ${{ steps.check_version.outputs.release_notes_file_path }}
+          if-no-files-found: error
+  test:
+    name: Test
+    needs:
+      - prepare
+    uses: tomasz-walczyk/windows-mkpasswd/.github/workflows/test.yml@master
+    with:
+      package_version: ${{ needs.prepare.outputs.release_version }}
+  release:
+    name: Release
+    needs:
+      - prepare
+      - test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download Linux Package
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ needs.test.outputs.linux_package_file_name }}
+      - name: Download Linux Hash
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ needs.test.outputs.linux_hash_file_name }}
+      - name: Download MacOS Package
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ needs.test.outputs.macos_package_file_name }}
+      - name: Download MacOS Hash
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ needs.test.outputs.macos_hash_file_name }}
+      - name: Download Windows Package
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ needs.test.outputs.windows_package_file_name }}
+      - name: Download Windows Hash
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ needs.test.outputs.windows_hash_file_name }}
+      - name: Download Release Notes
+        uses: actions/download-artifact@v2
+        with:
+          name: ${{ needs.prepare.outputs.release_notes_file_name }}
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          draft: false
+          prerelease: false
+          commitish: ${{ github.sha }}
+          tag_name: ${{ github.ref_name }}
+          release_name: ${{ needs.prepare.outputs.release_name }}
+          body_path: ${{ needs.prepare.outputs.release_notes_file_name }}
+      - name: Upload Linux Package
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ needs.test.outputs.linux_package_file_name }}
+          asset_name: ${{ needs.test.outputs.linux_package_file_name }}
+          asset_content_type: application/x-gtar
+      - name: Upload Linux Hash
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ needs.test.outputs.linux_hash_file_name }}
+          asset_name: ${{ needs.test.outputs.linux_hash_file_name }}
+          asset_content_type: text/plain
+      - name: Upload MacOS Package
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ needs.test.outputs.macos_package_file_name }}
+          asset_name: ${{ needs.test.outputs.macos_package_file_name }}
+          asset_content_type: application/x-gtar
+      - name: Upload MacOS Hash
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ needs.test.outputs.macos_hash_file_name }}
+          asset_name: ${{ needs.test.outputs.macos_hash_file_name }}
+          asset_content_type: text/plain
+      - name: Upload Windows Package
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ needs.test.outputs.windows_package_file_name }}
+          asset_name: ${{ needs.test.outputs.windows_package_file_name }}
+          asset_content_type: application/zip
+      - name: Upload Windows Hash
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ needs.test.outputs.windows_hash_file_name }}
+          asset_name: ${{ needs.test.outputs.windows_hash_file_name }}
+          asset_content_type: text/plain

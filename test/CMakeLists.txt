@@ -1,0 +1,54 @@
+#
+# Copyright (C) 2022 Tomasz Walczyk
+#
+# This software may be modified and distributed under the terms
+# of the GNU LESSER GENERAL PUBLIC LICENSE VERSION 3.0.
+# See the LICENSE file for details.
+#
+############################################################
+
+set(GOOGLE_TEST_DIR ${CMAKE_CURRENT_BINARY_DIR}/GoogleTest)
+set(GOOGLE_TEST_INSTALL_DIR ${GOOGLE_TEST_DIR}/install)
+
+include(ExternalProject)
+ExternalProject_Add(GoogleTest
+  EXCLUDE_FROM_ALL ON
+  PREFIX ${GOOGLE_TEST_DIR}
+  INSTALL_DIR ${GOOGLE_TEST_INSTALL_DIR}
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG main
+  CMAKE_CACHE_ARGS
+    -DBUILD_GMOCK:BOOL=ON
+    -DBUILD_SHARED_LIBS:BOOL=OFF
+    -DINSTALL_GTEST:BOOL=ON
+    -DCMAKE_INSTALL_PREFIX:PATH=<INSTALL_DIR>/$<CONFIG>
+    -DCMAKE_BUILD_TYPE:STRING=${CMAKE_BUILD_TYPE}
+    -DCMAKE_CONFIGURATION_TYPES:STRING=${CMAKE_CONFIGURATION_TYPES}
+    -DCMAKE_OSX_SYSROOT:PATH=${CMAKE_OSX_SYSROOT}
+    -DCMAKE_OSX_ARCHITECTURES:STRING=${CMAKE_OSX_ARCHITECTURES}
+    -DCMAKE_OSX_DEPLOYMENT_TARGET:STRING=${CMAKE_OSX_DEPLOYMENT_TARGET}
+    -DCMAKE_MSVC_RUNTIME_LIBRARY:STRING=${CMAKE_MSVC_RUNTIME_LIBRARY}
+    -Dgmock_build_tests:BOOL=OFF
+    -Dgtest_build_samples:BOOL=OFF
+    -Dgtest_build_tests:BOOL=OFF
+    -Dgtest_disable_pthreads:BOOL=ON
+    -Dgtest_force_shared_crt:BOOL=OFF
+    -Dgtest_hide_internal_symbols:BOOL=OFF
+)
+
+set(GOOGLE_TEST_INCLUDE_DIRECTORIES ${GOOGLE_TEST_INSTALL_DIR}/$<CONFIG>/include)
+foreach(LIBRARY gtest gmock)
+  add_library(${LIBRARY} STATIC IMPORTED)
+  set_target_properties(${LIBRARY} PROPERTIES IMPORTED_LOCATION_DEBUG ${GOOGLE_TEST_INSTALL_DIR}/Debug/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${LIBRARY}d${CMAKE_STATIC_LIBRARY_SUFFIX})
+  set_target_properties(${LIBRARY} PROPERTIES IMPORTED_LOCATION_RELEASE ${GOOGLE_TEST_INSTALL_DIR}/Release/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${LIBRARY}${CMAKE_STATIC_LIBRARY_SUFFIX})
+  set_target_properties(${LIBRARY} PROPERTIES IMPORTED_LOCATION_MINSIZEREL ${GOOGLE_TEST_INSTALL_DIR}/MinSizeRel/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${LIBRARY}${CMAKE_STATIC_LIBRARY_SUFFIX})
+  set_target_properties(${LIBRARY} PROPERTIES IMPORTED_LOCATION_RELWITHDEBINFO ${GOOGLE_TEST_INSTALL_DIR}/RelWithDebInfo/lib/${CMAKE_STATIC_LIBRARY_PREFIX}${LIBRARY}${CMAKE_STATIC_LIBRARY_SUFFIX})
+  add_dependencies(${LIBRARY} GoogleTest)
+endforeach()
+
+add_executable(${PROJECT_NAME}-test-bin source/main.cpp source/sha512-crypt.cpp)
+set_target_properties(${PROJECT_NAME}-test-bin PROPERTIES OUTPUT_NAME ${PROJECT_NAME}-test)
+target_link_libraries(${PROJECT_NAME}-test-bin PRIVATE gtest gmock ${PROJECT_NAME}-lib)
+target_include_directories(${PROJECT_NAME}-test-bin PRIVATE ${GOOGLE_TEST_INCLUDE_DIRECTORIES})
+target_compile_definitions(${PROJECT_NAME}-test-bin PRIVATE -DTEST_DATA_FILE_PATH="${CMAKE_CURRENT_SOURCE_DIR}/data/test-data.txt")
+add_custom_target(${PROJECT_NAME}-test-run COMMAND $<TARGET_FILE:${PROJECT_NAME}-test-bin> DEPENDS ${PROJECT_NAME}-test-bin)

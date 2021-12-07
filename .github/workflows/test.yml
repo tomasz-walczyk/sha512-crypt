@@ -1,0 +1,159 @@
+#
+# Copyright (C) 2022 Tomasz Walczyk
+#
+# This software may be modified and distributed under the terms
+# of the GNU LESSER GENERAL PUBLIC LICENSE VERSION 3.0.
+# See the LICENSE file for details.
+#
+############################################################
+
+name: Test
+on:
+  push:
+    branches:
+    - master
+    paths-ignore:
+    - LICENSE
+    - README.md
+  pull_request:
+    branches:
+    - master
+    paths-ignore:
+    - LICENSE
+    - README.md
+  schedule:
+    - cron: '0 0 1 * *'
+  workflow_call:
+    inputs:
+      package_version:
+        description: Package version
+        required: true
+        type: string
+    outputs:
+      linux_package_file_name:
+        description: Name of the Linux package file
+        value: ${{ jobs.test_on_linux.outputs.package_file_name }}
+      linux_hash_file_name:
+        description: Name of the Linux hash file
+        value: ${{ jobs.test_on_linux.outputs.hash_file_name }}
+      macos_package_file_name:
+        description: Name of the MacOS package file
+        value: ${{ jobs.test_on_macos.outputs.package_file_name }}
+      macos_hash_file_name:
+        description: Name of the MacOS hash file
+        value: ${{ jobs.test_on_macos.outputs.hash_file_name }}
+      windows_package_file_name:
+        description: Name of the Windows package file
+        value: ${{ jobs.test_on_windows.outputs.package_file_name }}
+      windows_hash_file_name:
+        description: Name of the Windows hash file
+        value: ${{ jobs.test_on_windows.outputs.hash_file_name }}
+env:
+  BUILD_TYPE: Release
+  BUILD_PATH: ${{ github.workspace }}/build
+  INSTALL_PATH: ${{ github.workspace }}/build/install
+  PACKAGE_PATH: ${{ github.workspace }}/build/package
+  PACKAGE_VERSION: ${{ inputs.package_version || github.sha }}
+jobs:
+  test_on_linux:
+    name: Test On Linux
+    runs-on: ubuntu-latest
+    outputs:
+      package_file_name: ${{ steps.package.outputs.package_file_name }}
+      package_file_path: ${{ steps.package.outputs.package_file_path }}
+      hash_file_name: ${{ steps.package.outputs.hash_file_name }}
+      hash_file_path: ${{ steps.package.outputs.hash_file_path }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+      - name: Generate Build System
+        run: cmake -G 'Unix Makefiles' -S . -B "${BUILD_PATH}"
+      - name: Build
+        run: cmake --build "${BUILD_PATH}" --config "${BUILD_TYPE}" --target sha512-crypt-test-bin
+      - name: Test
+        run: cmake --build "${BUILD_PATH}" --config "${BUILD_TYPE}" --target sha512-crypt-test-run
+      - name: Install
+        run: cmake --build "${BUILD_PATH}" --config "${BUILD_TYPE}" --target install
+      - name: Package
+        id: package
+        run: bash .github/workflows/scripts/create-linux-package.bash
+      - name: Upload Package
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.package.outputs.package_file_name }}
+          path: ${{ steps.package.outputs.package_file_path }}
+          if-no-files-found: error
+      - name: Upload Hash
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.package.outputs.hash_file_name }}
+          path: ${{ steps.package.outputs.hash_file_path }}
+          if-no-files-found: error
+  test_on_macos:
+    name: Test On MacOS
+    runs-on: macos-latest
+    outputs:
+      package_file_name: ${{ steps.package.outputs.package_file_name }}
+      package_file_path: ${{ steps.package.outputs.package_file_path }}
+      hash_file_name: ${{ steps.package.outputs.hash_file_name }}
+      hash_file_path: ${{ steps.package.outputs.hash_file_path }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+      - name: Generate Build System
+        run: cmake -G 'Unix Makefiles' -S . -B "${BUILD_PATH}"
+      - name: Build
+        run: cmake --build "${BUILD_PATH}" --config "${BUILD_TYPE}" --target sha512-crypt-test-bin
+      - name: Test
+        run: cmake --build "${BUILD_PATH}" --config "${BUILD_TYPE}" --target sha512-crypt-test-run
+      - name: Install
+        run: cmake --build "${BUILD_PATH}" --config "${BUILD_TYPE}" --target install
+      - name: Package
+        id: package
+        run: bash .github/workflows/scripts/create-macos-package.bash
+      - name: Upload Package
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.package.outputs.package_file_name }}
+          path: ${{ steps.package.outputs.package_file_path }}
+          if-no-files-found: error
+      - name: Upload Hash
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.package.outputs.hash_file_name }}
+          path: ${{ steps.package.outputs.hash_file_path }}
+          if-no-files-found: error
+  test_on_windows:
+    name: Test On Windows
+    runs-on: windows-latest
+    outputs:
+      package_file_name: ${{ steps.package.outputs.package_file_name }}
+      package_file_path: ${{ steps.package.outputs.package_file_path }}
+      hash_file_name: ${{ steps.package.outputs.hash_file_name }}
+      hash_file_path: ${{ steps.package.outputs.hash_file_path }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+      - name: Generate Project
+        run: cmake -G 'Visual Studio 16 2019' -S . -B "$ENV:BUILD_PATH"
+      - name: Build
+        run: cmake --build "$ENV:BUILD_PATH" --config "$ENV:BUILD_TYPE" --target sha512-crypt-test-bin
+      - name: Test
+        run: cmake --build "$ENV:BUILD_PATH" --config "$ENV:BUILD_TYPE" --target sha512-crypt-test-run
+      - name: Install
+        run: cmake --build "$ENV:BUILD_PATH" --config "$ENV:BUILD_TYPE" --target install
+      - name: Package
+        id: package
+        run: powershell .github/workflows/scripts/create-windows-package.ps1
+      - name: Upload Package
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.package.outputs.package_file_name }}
+          path: ${{ steps.package.outputs.package_file_path }}
+          if-no-files-found: error
+      - name: Upload Hash
+        uses: actions/upload-artifact@v2
+        with:
+          name: ${{ steps.package.outputs.hash_file_name }}
+          path: ${{ steps.package.outputs.hash_file_path }}
+          if-no-files-found: error
