@@ -41,7 +41,7 @@ jobs:
     name: Test
     needs:
       - prepare
-    uses: tomasz-walczyk/windows-mkpasswd/.github/workflows/test.yml@master
+    uses: tomasz-walczyk/sha512-crypt/.github/workflows/test.yml@master
     with:
       package_version: ${{ needs.prepare.outputs.release_version }}
   release:
