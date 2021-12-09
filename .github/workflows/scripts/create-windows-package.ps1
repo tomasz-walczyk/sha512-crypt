@@ -8,7 +8,6 @@
 ############################################################
 
 Set-StrictMode -Version Latest
-$ErrorActionPreference='Stop'
 
 #-----------------------------------------------------------
 # Check preconditions.
