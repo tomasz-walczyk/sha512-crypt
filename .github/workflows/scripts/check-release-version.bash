@@ -105,7 +105,7 @@ fi
 # Set output variables.
 #-----------------------------------------------------------
 
-echo "::set-output name=release_name::${RELEASE_NAME}"
-echo "::set-output name=release_version::${RELEASE_VERSION}"
-echo "::set-output name=release_notes_file_name::${RELEASE_NOTES_FILE_NAME}"
-echo "::set-output name=release_notes_file_path::${RELEASE_NOTES_FILE_PATH}"
+echo "release_name=${RELEASE_NAME}" >> "${GITHUB_OUTPUT}"
+echo "release_version=${RELEASE_VERSION}" >> "${GITHUB_OUTPUT}"
+echo "release_notes_file_name=${RELEASE_NOTES_FILE_NAME}" >> "${GITHUB_OUTPUT}"
+echo "release_notes_file_path=${RELEASE_NOTES_FILE_PATH}" >> "${GITHUB_OUTPUT}"
