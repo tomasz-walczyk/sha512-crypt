@@ -23,7 +23,7 @@ jobs:
       release_notes_file_path: ${{ steps.check_version.outputs.release_notes_file_path }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Check Version
@@ -32,11 +32,10 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: bash .github/workflows/scripts/check-release-version.bash
       - name: Upload Release Notes
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         with:
           name: ${{ steps.check_version.outputs.release_notes_file_name }}
           path: ${{ steps.check_version.outputs.release_notes_file_path }}
-          if-no-files-found: error
   test:
     name: Test
     needs:
@@ -56,27 +55,27 @@ jobs:
         with:
           name: ${{ needs.test.outputs.linux_package_file_name }}
       - name: Download Linux Hash
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.test.outputs.linux_hash_file_name }}
       - name: Download MacOS Package
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.test.outputs.macos_package_file_name }}
       - name: Download MacOS Hash
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.test.outputs.macos_hash_file_name }}
       - name: Download Windows Package
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.test.outputs.windows_package_file_name }}
       - name: Download Windows Hash
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.test.outputs.windows_hash_file_name }}
       - name: Download Release Notes
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v4
         with:
           name: ${{ needs.prepare.outputs.release_notes_file_name }}
       - name: Create Release
