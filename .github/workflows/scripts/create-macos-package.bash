@@ -58,7 +58,7 @@ shasum -a 512 "${PACKAGE_FILE_PATH}" | awk '{printf $1}' > "${HASH_FILE_PATH}"
 # Set output variables.
 #-----------------------------------------------------------
 
-echo "::set-output name=package_file_name::${PACKAGE_FILE_NAME}"
-echo "::set-output name=package_file_path::${PACKAGE_FILE_PATH}"
-echo "::set-output name=hash_file_name::${HASH_FILE_NAME}"
-echo "::set-output name=hash_file_path::${HASH_FILE_PATH}"
+echo "package_file_name::${PACKAGE_FILE_NAME}" >> "${GITHUB_OUTPUT}"
+echo "package_file_path::${PACKAGE_FILE_PATH}" >> "${GITHUB_OUTPUT}"
+echo "hash_file_name::${HASH_FILE_NAME}" >> "${GITHUB_OUTPUT}"
+echo "hash_file_path::${HASH_FILE_PATH}" >> "${GITHUB_OUTPUT}"
