@@ -35,7 +35,7 @@ $PackageFileHash | Out-File -FilePath $HashFilePath -Encoding ASCII -NoNewline
 # Set output variables.
 #-----------------------------------------------------------
 
-Write-Output "::set-output name=package_file_name::$PackageFileName"
-Write-Output "::set-output name=package_file_path::$PackageFilePath"
-Write-Output "::set-output name=hash_file_name::$HashFileName"
-Write-Output "::set-output name=hash_file_path::$HashFilePath"
+Write-Output "package_file_name=$PackageFileName" >> $env:GITHUB_OUTPUT
+Write-Output "package_file_path=$PackageFilePath" >> $env:GITHUB_OUTPUT
+Write-Output "hash_file_name=$HashFileName" >> $env:GITHUB_OUTPUT
+Write-Output "hash_file_path=$HashFilePath" >> $env:GITHUB_OUTPUT
